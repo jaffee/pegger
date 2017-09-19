@@ -1,4 +1,4 @@
-Peg your CPUs
+Peg your CPUs!
 
 Install:
 
