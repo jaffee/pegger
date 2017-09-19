@@ -12,15 +12,16 @@ func main() {
 	flag.Parse()
 
 	wg := sync.WaitGroup{}
-	vals := make([]int, conc)
+	vals := make([]int, *conc)
 
-	for i := 0; i < conc; i++ {
+	for i := 0; i < *conc; i++ {
 		vals[i] = rand.Int()
 		wg.Add(1)
 		go func(idx int) {
 			defer wg.Done()
+			rnd := rand.New(rand.NewSource(rand.Int63()))
 			for j := 0; j < 1000*1000*1000*1000; j++ {
-				vals[idx] = vals[idx] ^ rand.Int()
+				vals[idx] = vals[idx] ^ rnd.Int()
 			}
 		}(i)
 	}
