@@ -1,4 +1,4 @@
-package main
+package pegger
 
 import (
 	"log"
@@ -7,25 +7,23 @@ import (
 	_ "net/http/pprof"
 	"runtime"
 	"sync"
-
-	"github.com/jaffee/commandeer"
 )
 
-type Main struct {
+type Pegger struct {
 	Concurrency int    `help:"Number of goroutines to spawn."`
 	Iterations  uint64 `help:"Number of times each routine should loop."`
 	Profiling   string `help:"Bind address for pprof."`
 }
 
-func NewMain() *Main {
-	return &Main{
+func NewPegger() *Pegger {
+	return &Pegger{
 		Concurrency: runtime.NumCPU(),
 		Iterations:  1 << 40,
 		Profiling:   "localhost:6060",
 	}
 }
 
-func (m *Main) Run() error {
+func (m *Pegger) Run() error {
 	go func() {
 		log.Println(http.ListenAndServe(m.Profiling, nil))
 	}()
@@ -46,12 +44,6 @@ func (m *Main) Run() error {
 	}
 
 	wg.Wait()
-	log.Println(vals)
+	log.Println(vals) // "use" vals so compiler can't optimize computation away.
 	return nil
-}
-
-func main() {
-	if err := commandeer.Run(NewMain()); err != nil {
-		log.Fatal(err)
-	}
 }
