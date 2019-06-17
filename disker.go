@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -21,6 +24,8 @@ type Disker struct {
 	FileSizeBytes   int    `help:"Size of files to write."`
 	FileSizeBytesP2 uint   `help:"Power of two to set the file size to. Ignored if FileSizeBytes is set."`
 	Iterations      int    `help:"Number of times each goroutine will overwrite its file."`
+	Profiling       string `help:"Bind address for pprof."`
+	Cleanup         bool   `help:"Delete data when complete?"`
 }
 
 // NewDisker gets a new Disker with default values.
@@ -29,17 +34,25 @@ func NewDisker() *Disker {
 		Iterations:      100,
 		Concurrency:     runtime.NumCPU(),
 		FileSizeBytesP2: 20,
+		Cleanup:         true,
 	}
 }
 
-// Run runs
+// Run runs Disker.
 func (m *Disker) Run() (err error) {
+	go func() {
+		log.Println(http.ListenAndServe(m.Profiling, nil))
+	}()
+
 	if m.Dir == "" {
 		m.Dir, err = ioutil.TempDir("", "disker")
 		if err != nil {
 			return errors.Wrap(err, "getting temp dir")
 		}
 	}
+
+	// TODO handle SIGINT so that dir gets cleaned up on Control-C
+
 	if m.FileSizeBytesP2 > 63 {
 		return errors.Errorf("FileSizeBytesP2 cannot be greater than 63, but is set to %d", m.FileSizeBytesP2)
 	}
@@ -87,8 +100,11 @@ func (m *Disker) Run() (err error) {
 }
 
 func (m *Disker) cleanup() error {
-	err := os.RemoveAll(m.Dir)
-	return errors.Wrap(err, "removing directory")
+	if m.Cleanup {
+		err := os.RemoveAll(m.Dir)
+		return errors.Wrap(err, "removing directory")
+	}
+	return nil
 }
 
 // nopReader is an io.Reader which returns the slice given to its read method
