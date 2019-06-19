@@ -8,6 +8,7 @@ import (
 	_ "net/http/pprof"
 	"runtime"
 	"sync"
+	"time"
 )
 
 type Pegger struct {
@@ -28,6 +29,7 @@ func (m *Pegger) Run() error {
 	wg := sync.WaitGroup{}
 	vals := make([]int, m.Concurrency)
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(3 * time.Second)
 		fmt.Fprintf(w, "stuff\n")
 	})
 	go func() {
