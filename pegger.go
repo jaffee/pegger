@@ -1,6 +1,7 @@
 package pegger
 
 import (
+	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
@@ -24,12 +25,14 @@ func NewPegger() *Pegger {
 }
 
 func (m *Pegger) Run() error {
+	wg := sync.WaitGroup{}
+	vals := make([]int, m.Concurrency)
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "stuff\n")
+	})
 	go func() {
 		log.Println(http.ListenAndServe(m.Profiling, nil))
 	}()
-
-	wg := sync.WaitGroup{}
-	vals := make([]int, m.Concurrency)
 
 	for i := 0; i < m.Concurrency; i++ {
 		vals[i] = rand.Int()
